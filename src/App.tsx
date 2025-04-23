@@ -9,6 +9,9 @@ import SalesPage from "./pages/SalesPage";
 import OrdersPage from "./pages/OrdersPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
+import ModalGlobal from "./components/ModalGlobal";
+import { useStoreModal } from "./store/ModalState/modalState";
+import { ToastContainer } from "react-toastify";
 
 function App() {
 	return (
@@ -29,6 +32,8 @@ function App() {
 				<Route path='/analytics' element={<AnalyticsPage />} />
 				<Route path='/settings' element={<SettingsPage />} />
 			</Routes>
+			<ModalGlobal />
+			 <ToastContainer />
 		</div>
 	);
 }
