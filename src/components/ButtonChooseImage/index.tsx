@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Grid, Box } from "@mui/material";
 interface MultiImageUploadProps {
   setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  defultImgs?: string;
 }
 const MultiImageUpload = (props: MultiImageUploadProps) => {
-  const { setSelectedFiles } = props;
+  const { setSelectedFiles, defultImgs } = props;
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,7 +23,12 @@ const MultiImageUpload = (props: MultiImageUploadProps) => {
 
     e.target.value = "";
   };
-
+  useEffect(() => {
+    if (defultImgs) {
+      const newPreviewUrls = defultImgs.split(",");
+      setPreviewUrls((prev) => [...newPreviewUrls]);
+    }
+   }, [defultImgs]);
   return (
     <Box>
       <input
@@ -38,18 +44,6 @@ const MultiImageUpload = (props: MultiImageUploadProps) => {
           Chọn nhiều ảnh
         </Button>
       </label>
-
-      {/* <Grid container spacing={1} mt={2}>
-        {previewUrls.map((img, index) => (
-          <Grid item xs={3} key={index}>
-            <img
-              src={img}
-              alt={`preview-${index}`}
-              style={{ width: "100%", borderRadius: 8, objectFit: "cover" }}
-            />
-          </Grid>
-        ))}
-      </Grid> */}
       <Box
         sx={{
           display: "flex",

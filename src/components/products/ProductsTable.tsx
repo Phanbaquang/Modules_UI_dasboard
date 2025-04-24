@@ -15,16 +15,17 @@ interface Product {
 	category: string;
 	img: string;
 	quanity: number;
-	sales: number;
-	imageName: string[]
+	imageName: string[];
+	sale?: number;
 }
 
 const ProductsTable = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [products, setProducts] = useState<Product[]>([]);
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-	const { openModal } = useStoreModal(state => state);
-	const { setCategories, categories } = useCategoryStore(state => state)
+	const { openModal, isOpen } = useStoreModal(state => state);
+	const { setCategories, categories , settotalProduct } = useCategoryStore(state => state)
+	const [productsData, setProductsData] = useState([])
 
 	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const term = e.target.value.toLowerCase();
@@ -70,13 +71,15 @@ const ProductsTable = () => {
 						category: categories?.find(_item => _item?._id === item?.category_id)?.name || 'Unknown',
 						img: item.image ? item.image.split(',')[0] : '',
 						quanity: getTotalQuantity(item.sizeDetail) || 0,
-						sales: item.sales || 0,
+						sale: item.sale || 0,
 						imageName: item?.imageName
 					}));
 					categories?.find(_item => _item?._id === res.data.data[0]?.category_id)
 					console.log(categories?.find(_item => _item?._id === res.data.data[0]?.category_id), 'fdsfdsfdsfd')
 					setProducts(data);
 					setFilteredProducts(data);
+					setProductsData(res.data.data)
+					settotalProduct(res.data.totalCount)
 				}
 			} catch (error) {
 				console.error("Error fetching products:", error);
@@ -85,7 +88,7 @@ const ProductsTable = () => {
 
 
 		fetchData();
-	}, []);
+	}, [!isOpen]);
 
 	const handleDeleProduct = async (id: string, imageName: string[]) => {
 
@@ -129,7 +132,7 @@ const ProductsTable = () => {
 				<div className='flex justify-between items-center mb-6 gap-4 flex-wrap'>
 					<h2 className='text-xl font-semibold text-gray-100'>Product List</h2>
 
-					<div onClick={() => openModal(<ModalProduct />)} className='cursor-pointer text-green-400 hover:text-green-300'>
+					<div onClick={() => openModal(<ModalProduct productData={undefined} />)} className='cursor-pointer text-green-400 hover:text-green-300'>
 						<AddBoxIcon fontSize="large" />
 					</div>
 
@@ -152,7 +155,7 @@ const ProductsTable = () => {
 								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Name</th>
 								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Category</th>
 								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Price</th>
-								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Stock</th>
+								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Quanity</th>
 								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Sales</th>
 								<th className='px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider'>Actions</th>
 							</tr>
@@ -173,10 +176,10 @@ const ProductsTable = () => {
 									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{product.category}</td>
 									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>${product.price.toFixed(2)}</td>
 									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{product.quanity}</td>
-									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{product.sales}</td>
+									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{product.sale}%</td>
 									<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
 										<button className='text-indigo-400 hover:text-indigo-300 mr-2'>
-											<Edit size={18} />
+											<Edit size={18} onClick={() => openModal(<ModalProduct  productData={productsData?.find(item => item?._id === product?.id)} />)} />
 										</button>
 										<button className='text-red-400 hover:text-red-300'>
 											<Trash2 size={18} onClick={() => handleDeleProduct(product?.id, product.imageName)} />

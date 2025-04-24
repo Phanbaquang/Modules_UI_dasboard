@@ -13,26 +13,7 @@ interface IFormInput {
 	image: FileList | null;
 	description: string;
 }
-const categoryData = [
-	{
-		id: 1,
-		name: "Electronics",
-		image: "https://buggy.yodycdn.com/images/home-carousel-dt/fa2d6619f3f7ad76fc8f0010b143a05b.webp?width=2400&height=1350",
-		description: "All kinds of electronic gadgets.",
-	},
-	{
-		id: 2,
-		name: "Furniture",
-		image: "https://via.placeholder.com/100",
-		description: "Stylish and comfortable furniture.",
-	},
-	{
-		id: 3,
-		name: "Clothing",
-		image: "https://via.placeholder.com/100",
-		description: "Trendy clothes for every season.",
-	},
-];
+
 const SalesPage = () => {
 	const [deaafultValues, setDefaultValues] = useState<
 		{

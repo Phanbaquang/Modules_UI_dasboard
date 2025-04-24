@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Eye } from "lucide-react";
+import servicesInstance from "../../lib/Service";
 
 const orderData = [
 	{ id: "ORD001", customer: "John Doe", total: 235.4, status: "Delivered", date: "2023-07-01" },
@@ -15,16 +16,47 @@ const orderData = [
 
 const OrdersTable = () => {
 	const [searchTerm, setSearchTerm] = useState("");
+	const [orderData, setOrderData] = useState([]);
 	const [filteredOrders, setFilteredOrders] = useState(orderData);
 
 	const handleSearch = (e) => {
-		const term = e.target.value.toLowerCase();
-		setSearchTerm(term);
-		const filtered = orderData.filter(
-			(order) => order.id.toLowerCase().includes(term) || order.customer.toLowerCase().includes(term)
-		);
-		setFilteredOrders(filtered);
+		// const term = e.target.value.toLowerCase();
+		// setSearchTerm(term);
+		// const filtered = orderData.filter(
+		// 	(order) => order.id.toLowerCase().includes(term) || order.customer.toLowerCase().includes(term)
+		// );
+		// setFilteredOrders(filtered);
 	};
+	console.log(orderData,'fsdgfsdfsd')
+	useEffect(() => { 
+		const fetchdata = async () => { 
+			try {
+				const res = await servicesInstance.get('/order-detail');
+				if (res?.data) {
+					setOrderData(res.data?.order);
+					setFilteredOrders(res.data?.order);
+				}
+			} catch (error) {
+				
+			}
+		}
+		fetchdata()
+	}, [])
+	function convertToVietnameseDate(isoString) {
+  const date = new Date(isoString);
+
+  // Cộng thêm 7 giờ cho múi giờ Việt Nam (UTC+7)
+  date.setHours(date.getHours() + 7);
+
+  const dd = date.getDate().toString().padStart(2, '0');
+  const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const hh = date.getHours().toString().padStart(2, '0');
+  const min = date.getMinutes().toString().padStart(2, '0');
+  const ss = date.getSeconds().toString().padStart(2, '0');
+
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+}
 
 	return (
 		<motion.div
@@ -75,22 +107,22 @@ const OrdersTable = () => {
 					<tbody className='divide divide-gray-700'>
 						{filteredOrders.map((order) => (
 							<motion.tr
-								key={order.id}
+								key={order._id}
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								transition={{ duration: 0.3 }}
 							>
 								<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100'>
-									{order.id}
+									{order.userId}
 								</td>
 								<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100'>
-									{order.customer}
+									{order.name}
 								</td>
 								<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100'>
-									${order.total.toFixed(2)}
+									{/* ${order.total.toFixed(2)} */}
 								</td>
 								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
-									<span
+									{/* <span
 										className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
 											order.status === "Delivered"
 												? "bg-green-100 text-green-800"
@@ -102,9 +134,9 @@ const OrdersTable = () => {
 										}`}
 									>
 										{order.status}
-									</span>
+									</span> */}
 								</td>
-								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{order.date}</td>
+								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>{ convertToVietnameseDate(order.createdAt)}</td>
 								<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-300'>
 									<button className='text-indigo-400 hover:text-indigo-300 mr-2'>
 										<Eye size={18} />

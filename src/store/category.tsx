@@ -13,6 +13,7 @@ type Category = {
 
 type CategoryState = {
   categories: Category[];
+  totalProduct: number;
 };
 
 type CategoryActions = {
@@ -20,11 +21,13 @@ type CategoryActions = {
   addCategory: (category: Category) => void;
   updateCategory: (updatedCategory: Category) => void;
   removeCategory: (_id: string) => void;
+  settotalProduct: (totalProduct: number) => void;
+
 };
 
 export const useCategoryStore = create<CategoryState & CategoryActions>((set, get) => ({
   categories: [],
-
+  totalProduct: 0,
   setCategories: (categories) => set({ categories }),
 
   addCategory: (category) => set((state) => ({
@@ -40,4 +43,5 @@ export const useCategoryStore = create<CategoryState & CategoryActions>((set, ge
   removeCategory: (_id) => set((state) => ({
     categories: state.categories.filter((cat) => cat._id !== _id),
   })),
+  settotalProduct: (totalProduct) => set({ totalProduct }),
 }));

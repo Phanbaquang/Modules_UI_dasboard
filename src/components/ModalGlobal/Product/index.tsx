@@ -4,11 +4,12 @@ import { Autocomplete, Button, FormControl, FormHelperText, InputLabel, MenuItem
 import { styled } from '@mui/system';
 import { Controller, useForm } from "react-hook-form";
 import { useStoreModal } from '../../../store/ModalState/modalState';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MultiImageUploader from '../../ButtonChooseImage';
 import servicesInstance from '../../../lib/Service';
 import { useCategoryStore } from '../../../store/category';
+import { toast } from 'react-toastify';
 type Color = {
     name: string;
     codeColor: string;
@@ -35,9 +36,9 @@ const color: Color[] = [
     { name: 'Đen', codeColor: '000', id: "6" },
 
 ]
-const ModalProduct = () => {
+const ModalProduct = ({ productData }: { productData: any }) => {
     const { closeModal } = useStoreModal(state => state)
-    const { control, handleSubmit, formState: { errors } } = useForm();
+    const { control, handleSubmit, formState: { errors }, reset } = useForm();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [selectedColor, setSelectedColor] = useState<Color[]>(color);
     const [colorValue, setColorValue] = useState<string>('');
@@ -47,7 +48,6 @@ const ModalProduct = () => {
     const [options, setOptions] = useState<string[]>(['L', 'XL', 'S', "M", "XXL", "XXXL"]);
     const [value, setValue] = useState<string[]>([]);
     const onSubmit = async (data: any) => {
-        console.log(data, 'data')
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
             formData.append(key, value as string);
@@ -56,15 +56,31 @@ const ModalProduct = () => {
             formData.append("image[]", file);
         });
         formData.append("sizeDetail", JSON.stringify(sizeDetail));
+        formData.append("color", value.join(','));
         try {
 
             await servicesInstance.post('/product', formData)
+            toast.success('Thêm sản phẩm thành công')
         } catch (error) {
         }
 
     };
+    useEffect(() => {
+        if (productData) {
+            reset({
+                productName: productData?.productName,
+                price: productData?.price,
+                category_id: productData?.category_id,
+                description: productData?.description,
+                sale: productData?.sale ?? 0,
+                hot: productData?.hot,
+                descriptionDetail: productData?.descriptionDetail,
+            })
+            setSizeDetail(productData?.sizeDetail)
+            setValue(productData?.color?.[0].split(',') ?? [])
+        }
 
-
+    }, [productData])
 
 
 
@@ -111,6 +127,27 @@ const ModalProduct = () => {
         });
     }
 
+    const handleUpdate = async (data: any) => {
+        const formData = new FormData();
+        formData.append('_id', productData?._id);
+        Object.entries(data).forEach(([key, value]) => {
+            formData.append(key, value as string);
+        })
+        formData.append("sizeDetail", JSON.stringify(sizeDetail));
+        formData.append("color", value.join(','));
+         selectedFiles.forEach((file) => {
+            formData.append("image[]", file);
+        });
+        try {
+
+            await servicesInstance.put('/productId', formData)
+            toast.success('Cập nhật sản phẩm thành công')
+        } catch (error) {
+
+        }
+
+    }
+
 
 
     return (
@@ -118,7 +155,7 @@ const ModalProduct = () => {
             <div className='flex justify-end'>
                 <span onClick={closeModal} className='cursor-pointer'> <CloseIcon /> </span>
             </div>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={handleSubmit(productData ? handleUpdate : onSubmit)}>
                 <div className='grid grid-cols-2 gap-4'>
                     <Controller
                         name="productName"
@@ -193,7 +230,7 @@ const ModalProduct = () => {
                         )}
                     />
                     <Controller
-                        name="Sales"
+                        name="sale"
                         control={control}
                         defaultValue=""
                         render={({ field, fieldState }) => (
@@ -220,8 +257,8 @@ const ModalProduct = () => {
                                     {...field}
                                 >
                                     <MenuItem value="">Chọn</MenuItem>
-                                    <MenuItem value="true">Có</MenuItem>
-                                    <MenuItem value="false">Không</MenuItem>
+                                    <MenuItem value="1">Có</MenuItem>
+                                    <MenuItem value="0">Không</MenuItem>
                                 </Select>
                                 {fieldState.error && (
                                     <FormHelperText>{fieldState.error.message}</FormHelperText>
@@ -247,7 +284,7 @@ const ModalProduct = () => {
                             />
                         )}
                     />
-                    <MultiImageUploader setSelectedFiles={setSelectedFiles} />
+                    <MultiImageUploader setSelectedFiles={setSelectedFiles} defultImgs={productData?.image} />
 
                     <Controller
                         name="descriptionDetail"
@@ -315,14 +352,19 @@ const ModalProduct = () => {
                         </Select>
                         {
                             value && colorValue &&
-                            <Button variant="contained" color="primary" onClick={() => setSizeDetail((pre) => {
-                                const foundColor = selectedColor.find((item) => item?.id === colorValue);
-                                if (!foundColor) return pre;
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => {
+                                    const foundColor = selectedColor.find((item) => item?.id === colorValue);
+                                    if (!foundColor) return;
 
-                                setSelectedColor((prev) => prev.filter((item) => item?.id !== colorValue));
+                                    setSelectedColor((prev) => prev.filter((item) => item?.id !== colorValue));
+                                    setColorValue(''); // <-- Thêm dòng này
 
-                                return [...pre, { ...defaulesizeDetail, color: foundColor }];
-                            })}>
+                                    setSizeDetail((pre) => [...pre, { ...defaulesizeDetail, color: foundColor }]);
+                                }}
+                            >
                                 Tạo size
                             </Button>
                         }
@@ -363,22 +405,23 @@ const ModalProduct = () => {
 
                     }
                 </div>
+                {
+                    productData?.sizeDetail?.length > 0 ?
+                        <Button type="submit" variant="contained" color="primary">
+                            Update
+                        </Button>
+                        :
+                        <Button type="submit" variant="contained" color="primary">
+                            Add
+                        </Button>
+                }
 
-                <Button type="submit" variant="contained" color="primary">
-                    Thêm
-                </Button>
             </form>
         </div>
     )
 }
 
 export default ModalProduct
-const fruits = [
-    { label: 'Apple', id: 1 },
-    { label: 'Banana', id: 2 },
-    { label: 'Cherry', id: 3 },
-];
 
-function useEFect(arg0: () => void, arg1: never[]) {
-    throw new Error('Function not implemented.');
-}
+
+
