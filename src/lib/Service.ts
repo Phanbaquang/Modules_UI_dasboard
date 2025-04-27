@@ -7,7 +7,7 @@ class Services {
     axios: AxiosInstance;
     constructor() {
         this.axios = axios.create({
-            baseURL: "http://localhost:8017/v1/api",
+            baseURL: "https://be-shop-olpu.onrender.com/v1/api",
             withCredentials: false,
         });
         this.axios.interceptors.request.use(
