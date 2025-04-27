@@ -36,6 +36,11 @@ const color: Color[] = [
     { name: 'Đen', codeColor: '000', id: "6" },
 
 ]
+const tagCommon = [
+    { name: 'mới', id: 1 },
+    { name: 'plasSale', id: 2 },
+    { name: 'sale', id: 3 }
+]
 const ModalProduct = ({ productData }: { productData: any }) => {
     const { closeModal } = useStoreModal(state => state)
     const { control, handleSubmit, formState: { errors }, reset } = useForm();
@@ -46,10 +51,17 @@ const ModalProduct = ({ productData }: { productData: any }) => {
     const { categories } = useCategoryStore(state => state)
 
     const [options, setOptions] = useState<string[]>(['L', 'XL', 'S', "M", "XXL", "XXXL"]);
+
+    const [tag, setTag] = useState<number[]>([1, 2, 3, 3, 4]);
+
     const [value, setValue] = useState<string[]>([]);
     const onSubmit = async (data: any) => {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
+            if (key === 'tag') {
+                formData.append("tag", JSON.stringify(data.tag));
+                return;
+            }
             formData.append(key, value as string);
         })
         selectedFiles.forEach((file) => {
@@ -135,7 +147,7 @@ const ModalProduct = ({ productData }: { productData: any }) => {
         })
         formData.append("sizeDetail", JSON.stringify(sizeDetail));
         formData.append("color", value.join(','));
-         selectedFiles.forEach((file) => {
+        selectedFiles.forEach((file) => {
             formData.append("image[]", file);
         });
         try {
@@ -147,7 +159,18 @@ const ModalProduct = ({ productData }: { productData: any }) => {
         }
 
     }
+    const [subCategories, setSubCategories] = useState<any[]>([])
+    const handleCallSubCategory = async (id: string) => { 
+        console.log(id)
+        try {
+            const res = await servicesInstance.get(`/sub_category`, { params: { categoryId: id } })
+            setSubCategories(res?.data?.data)
 
+        } catch (error) {
+            
+        }
+
+    }
 
 
     return (
@@ -202,9 +225,37 @@ const ModalProduct = ({ productData }: { productData: any }) => {
                                     {...field}  // Đảm bảo value và onChange được cung cấp bởi react-hook-form
                                     labelId="category_id-label"
                                     label="Danh mục sản phẩm"
+                                    onChange={(e) => {
+                                         field.onChange(e);
+                                        handleCallSubCategory(e.target.value)
+                                     }}
+
                                 >
                                     {
                                         categories.map(item => (
+                                            <MenuItem value={item?._id}>{item?.name}</MenuItem>
+                                        ))
+                                    }
+
+                                </Select>
+                            )}
+                        />
+                    </FormControl>
+                     <FormControl fullWidth margin="normal" error={!!errors.sub_category_id}>
+                        <InputLabel id="sub_category_id-label">Danh mục sản phẩm con</InputLabel>
+                        <Controller
+                            name="sub_category_id"
+                            control={control}
+                            defaultValue=""
+                            rules={{ required: "Chọn danh mục sản phẩmc con" }}
+                            render={({ field }) => (
+                                <Select
+                                    {...field}  // Đảm bảo value và onChange được cung cấp bởi react-hook-form
+                                    labelId="category_id-label"
+                                    label="Danh mục sản phẩm con"
+                                >
+                                    {
+                                        subCategories.map(item => (
                                             <MenuItem value={item?._id}>{item?.name}</MenuItem>
                                         ))
                                     }
@@ -230,17 +281,31 @@ const ModalProduct = ({ productData }: { productData: any }) => {
                         )}
                     />
                     <Controller
-                        name="sale"
+                        name="tag"
                         control={control}
-                        defaultValue=""
+                        defaultValue={[]} // mặc định là array id []
+                        rules={{ required: "Bạn cần chọn ít nhất 1 tag" }}
                         render={({ field, fieldState }) => (
-                            <TextField
-                                label="Sale"
-                                fullWidth
-                                margin="normal"
-                                {...field}
-                                error={!!fieldState.error}
-                                helperText={fieldState.error?.message}
+                            <Autocomplete
+                                multiple
+                                options={tagCommon.filter(tag => !field.value.includes(tag.id))} // ẩn option đã chọn
+                                getOptionLabel={(option) => option.name}
+                                value={tagCommon.filter(tag => field.value.includes(tag.id))}
+                                onChange={(event, newValue) => {
+                                    const selectedIds = newValue.map((tag) => tag.id);
+                                    field.onChange(selectedIds);
+                                }}
+                                isOptionEqualToValue={(option, value) => option.id === value.id} // so sánh theo id
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        label="Tag"
+                                        placeholder="Chọn tag"
+                                        error={!!fieldState.error}
+                                        helperText={fieldState.error?.message}
+                                    />
+                                )}
                             />
                         )}
                     />

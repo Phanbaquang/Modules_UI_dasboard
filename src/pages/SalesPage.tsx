@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import Header from "../components/common/Header";
 import { Button, InputAdornment, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
-import { CloudUpload, Edit } from "@mui/icons-material";
+import { CloudUpload, Edit, Add } from "@mui/icons-material";
 import { set, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import servicesInstance from "../lib/Service";
@@ -12,6 +12,7 @@ interface IFormInput {
 	name: string;
 	image: FileList | null;
 	description: string;
+	categoryId: string;
 }
 
 const SalesPage = () => {
@@ -23,13 +24,13 @@ const SalesPage = () => {
 		}
 	>()
 
-	const { register, handleSubmit, formState: { errors }, reset } = useForm<IFormInput>({
+	const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<IFormInput>({
 		defaultValues: {},
 	});
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageFile, setImageFile] = useState<File | null>(null);
 	const [idUpdate, setidUpdate] = useState<string>("");
-
+	const categoryId = watch("categoryId");
 	const onSubmit = async (data: IFormInput) => {
 
 		const formData = new FormData();
@@ -45,7 +46,7 @@ const SalesPage = () => {
 			try {
 				const response = await servicesInstance.put("/categoryId", formData);
 				if (response) {
-					console.log(response,'fdsfsdfds')
+					console.log(response, 'fdsfsdfds')
 					toast.success("Category updated successfully!");
 					setCategoryData((prev) => prev.map((item) => item._id === idUpdate ? { ...item, ...response.data } : item));
 				} else {
@@ -54,7 +55,7 @@ const SalesPage = () => {
 			} catch (error) {
 				toast.error("Failed to update category!");
 			}
-			
+
 		} else {
 			try {
 				const response = await servicesInstance.post("/category", formData);
@@ -66,7 +67,7 @@ const SalesPage = () => {
 					]);
 					reset({
 						description: '',
-						name:''
+						name: ''
 					})
 				} else {
 					toast.error("Failed to create category!");
@@ -103,6 +104,30 @@ const SalesPage = () => {
 		setEdit(true);
 	};
 
+	const handleCreateSubCategories = (id: string) => {
+		setValue("categoryId", id);
+	}
+
+	const onCreateSubCategory = async (data: IFormInput) => {
+		console.log(data, 'data')
+		const formData = new FormData();
+		formData.append("name", data.name);
+		formData.append("description", data.description);
+		formData.append("categoryId", data.categoryId);
+		if (imageFile) {
+			formData.append("image", imageFile);
+		}
+		try {
+			const response = await servicesInstance.post("/sub_category", formData);
+			if (response) {
+			} else {
+				toast.error("Failed to create Sub category!");
+			}
+		} catch (error) {
+			toast.error("Failed to create Sub category!");
+		}
+	}
+
 
 	const handleDelete = async (id: string, imageName: string) => {
 		try {
@@ -134,7 +159,7 @@ const SalesPage = () => {
 		fetchData();
 	}, []);
 
-	const handelCancel = () => { 
+	const handelCancel = () => {
 		setEdit(false);
 		reset({
 			name: "",
@@ -150,7 +175,30 @@ const SalesPage = () => {
 				<div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
 					<h2 className="text-2xl font-semibold text-gray-700 mb-4">Create Category</h2>
 
-					<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+					<form onSubmit={handleSubmit(categoryId ? onCreateSubCategory : onSubmit)} className="space-y-4">
+						<div>
+							{
+								categoryId && (
+									<TextField
+										label="Category Id"
+										variant="outlined"
+										fullWidth
+										{...register("categoryId", {
+											required: "Category Id is required",
+											maxLength: { value: 50, message: "Category Id is too long" }
+										})}
+										error={!!errors.categoryId}
+										helperText={errors.categoryId?.message}
+										className="mb-4"
+										slotProps={{
+											inputLabel: { shrink: true },
+										}}
+										disabled
+										value={categoryData?.find((item) => item._id === categoryId)?.name || ""}
+									/>
+								)
+							}
+						</div>
 						{/* Name */}
 						<div>
 							<TextField
@@ -167,12 +215,13 @@ const SalesPage = () => {
 							/>
 						</div>
 
+
 						{/* Custom Image Upload */}
 						<div className="flex items-center justify-start gap-4">
 							<input
 								type="file"
 								accept="image/*"
-								{...register("image", { required: imagePreview ? false :  "Image is required" })}
+								{...register("image", { required: imagePreview ? false : "Image is required" })}
 								onChange={handleImageChange}
 								className="hidden"
 								id="image-upload"
@@ -240,7 +289,7 @@ const SalesPage = () => {
 								</>
 							) : (
 								<Button type="submit" variant="contained" color="primary" fullWidth>
-									Create Category
+									{categoryId ? "Create Sub Category" : "Create Category"}
 								</Button>
 							)
 						}
@@ -296,6 +345,16 @@ const SalesPage = () => {
 										>
 											<Trash2 size={18} />
 											Delete
+										</Button>
+										<Button
+											variant="outlined"
+											color="info"
+											size="small"
+											onClick={() => handleCreateSubCategories(category._id)}
+											className="text-white border-white hover:bg-gray-700"
+										>
+											<Add />
+											Create sub categories
 										</Button>
 									</TableCell>
 								</TableRow>
